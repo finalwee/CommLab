@@ -50,16 +50,14 @@ def WDcomputeS(i,m,t,t_req):                                                   #
     for j in range(int(c)+1):                                                  #trasformo i coefficienti in binario e li faccio diventare elementi di un campo finito GF(t)
         alf[-j-1]=inttobit(alf[-j-1])
         alf[-j-1]=GFt(alf[-j-1])
-            
+         
     for a in range(int(t_req)):                                                #calcolo dell'i-esimo set S_i
         b=0
         Sa=0
         a=inttobit(a)                                                          #converto "a" in bit  
         a=GFt(a)                                                               #faccio diventare "a" un elemento di GF(t)               
-    
         for j in range(int(c)+1):                                              #calcolo il valore del polinomio p(x) per i vari x, polinomio che qui ho chiamato con "b"      
-           b=b+alf[-j-1]*GFpow(a,j)                                       
-           
+           b=b+alf[-j-1]*GFpow(a,j)                                     
         b=b.coeffs                                                             #crea la lista con gli elementi di "b" tramite .coeffs, partendo da "b" scritto come elemento di GF(t)
         b=bittoint(b)                                                          #trasformo "b" in intero
         Sa=Sa^b                                                                #costruisco per ogni "a" un S^(a)_i, che rappresenta l'elemento dell'i-esimo set S_i determinato dalla coppia (x, p(x)), cioè dalla coppia (a,b). Ora sto inserendo nella metà a destra di Sa il valore in binario di "b"
@@ -67,12 +65,13 @@ def WDcomputeS(i,m,t,t_req):                                                   #
         a=bittoint(a)                                                          #converto "a" in intero
         Sa=Sa^(a<<int(np.log2(t)))                                             #inserisco "a" scritto in binario in Sa nelle restanti posizioni di Sa, ovvero nella metà di sinistra di Sa    
         S.append(Sa)                                                           #costruisco S inserendo tutti i vari Sa come elementi di S
-  
+
     return S
 
 def OneBitExt(sottoseed, source, error):
     source_bitarray=bitarray(source)                                           #trasformo seed e source in bittarray
     sottoseed_bitarray=bitarray(sottoseed)
+    
     c=[]
     r=0
     n=len(source)
@@ -80,21 +79,25 @@ def OneBitExt(sottoseed, source, error):
     GF2l=GF(2**l)                                                              #creazione del campo finito GF(2^l) (la notazione in GF è bigendian)
     s=int(np.ceil(n/l))
     source=source+[0]*(s*l-n)                                                  #vogliamo dividere la sorgente di lunghezza "n" in "s" sottostringhe tutte di lunghezza "l", quindi allunghiamo la lista source mettendoci (s*l-n) zeri alla fine  
-                                                                 
+    # print('s', s*l-n)                                                             
     for i in range(s):                                                         #divido la stringa di input in "s" sottostringhe
-        c.append(source[i*l:(i+1)*l])
-            
+        c.append(source[i*l:(i+1)*l])        
     alf=sottoseed[0:l]                                                         #prendo la prima metà del sottoseed che va dal bit in posizione 0 al bit in posizione l e la inseriso nella variabile alf, poichè la lunghezza "t" del sottoseed è definita come 2*l con l=ceil(np.log2(n)+2*log2(2/error))
     
     for i in range(s):                                                         #Step Reed-Solomon: trasformo le varie sottostringhe in elementi del campo finito GF(2^l)
         c[i]=GF2l(c[i])
-       
+
     alf=GF2l(alf)                                                              #trasformo alf in un elemento del campo finito GF(2^l)
     
-    for i in range(1,s+1):                                                     #calcolo il polinomio del Reed-Salomon code: nell'articolo alf è elevato alla (s-i), mentre su internet ho trovato che deve essere elevato alla (i-1); inoltre, sia su internet che nell'articolo, x_i (cioè c[i] in questo caso) parte da x_1, mentre io lo faccio partire da x_0 per come ho costruito le sottostringhe
-        r=r+c[i-1]*GFpow(alf,(i-1))   
-   
-    
+    for i in range(1,s+1):
+        str_c = f'{c[i-1]:c}'
+        str_a = f'{GFpow(alf,(i-1)):c}'
+        print(f'c: {int(str_c,2)}, a: {int(str_a,2)}')                                             #calcolo il polinomio del Reed-Salomon code: nell'articolo alf è elevato alla (s-i), mentre su internet ho trovato che deve essere elevato alla (i-1); inoltre, sia su internet che nell'articolo, x_i (cioè c[i] in questo caso) parte da x_1, mentre io lo faccio partire da x_0 per come ho costruito le sottostringhe
+        r=r+c[i-1]*GFpow(alf,(i-1))
+        str_r = f'{r:c}'
+        print(int(str_r, 2))
+        print()    
+    # print(f'Done: {r}')
     r=r.coeffs                                                                 #crea la lista con gli elementi di "r" tramite .coeffs, partendo da "r" scritto come elemento di GF(2^l)
     r=bitarray(r)
     
@@ -127,7 +130,7 @@ print(f'k: {k}, m: {m}')
 t_req=int(2*np.ceil(np.log2(n)+2*np.log2(2/eps)))
 t=int(2**(np.ceil(np.log2(t_req))))                                            #Trasformiamo t_req nella potenza di 2 più vicina e più grande, poichè il WD funziona con t che sono potenze di 2 quindi sarà t>t_req
 d=t**2                         
-
+print(f'd: {d} t: {t} t_req: {t_req}')
 """
 Inserimento source e seed
 """
@@ -149,14 +152,15 @@ for i in range(d):
     
 for i in range(n):
     source.append(int(a[i],2))
-
 """
 Algoritmo Trevisan's extractor
 """
 
 rho=[0]*m
 
-for i in range(m):
+# S=WDcomputeS(m,m,t,t_req)
+
+for i in range(1):
     # print(i/m*100)
     S=WDcomputeS(i,m,t,t_req)
     b=[0]*t_req                          
@@ -168,9 +172,9 @@ for i in range(m):
         
     rho[i]=OneBitExt(b,source,eps)
 
-print()
-print("La stringa in uscita casuale è",rho)
-print()
-print("--- Il programma ha impiegato %s minuti per girare ---" %((time.time() - start_time)/60)) 
-print()
+# print()
+# print("La stringa in uscita casuale è",rho)
+# print()
+# print("--- Il programma ha impiegato %s minuti per girare ---" %((time.time() - start_time)/60)) 
+# print()
 
