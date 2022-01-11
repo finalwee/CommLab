@@ -1,18 +1,6 @@
 import numpy as np
 from galois import GF
 
-def inttobit(x):
-    if x > 0:
-        return [x//2**k % 2 for k in range(int(np.floor(np.log2(x))+1))]
-    if x==0:
-        return [0]
-    
-def bittoint(x):
-    a=0
-    for i in range(len(x)):
-        a=a+x[i]*2**i
-    return a
-
 def weakDesign(i, m, t, t_req):
     GF_t = GF(t)
 
@@ -53,20 +41,27 @@ def oneBitExtractor(seed, source, error):
     c = []
     for i in range(s):
         c.append(source[i*l:(i+1)*l])
-    seed_list = int(seed[:l], 2)
-    alpha = GF_2l(seed_list)
 
     for i in range(s):
         c[i] = GF_2l(int(c[i], 2))
+
+    seed_list = int(seed[:l], 2)
+    alpha = GF_2l(seed_list)
     
     r = GF_2l(0)
+    
     for i in range(1, s+1):
-        print(f'c: {c[i-1]}, a: {alpha**(i-1)}')
-        r = GF_2l(r + c[i-1]*alpha**(i-1))
-        print(r)
-        print()
+        print(f'{alpha**(i-1):0{l}b}')
+        alpha = c[i-1]*alpha**(i-1)
+        r = r + alpha
 
-    return 0
+    r = f'{r:0{l}b}'
+    b = 0
+    # print(r)
+    for i in range(l):
+        b = b ^ (bool(seed[i+l]) & bool(int(r[i])))
+    
+    return b
 
 
 def trsExtractor(seed, source, n, alpha, epsilon):
@@ -84,21 +79,23 @@ def trsExtractor(seed, source, n, alpha, epsilon):
     
     rho = np.zeros(m)
 
-    for i in range(1): # m
+    for i in range(m): # m
         S = weakDesign(i, m, t, t_req)
         b = np.zeros(t_req)
 
         for j in range(t_req):
             b[j] = np.int64(seed[S[j]])
         b = ''.join(b.astype(np.int64).astype(str))
-        rho[i] = oneBitExtractor(b, source, epsilon)
 
+        rho[i] = oneBitExtractor(b, source, epsilon)
+    print(len(rho))
+    print(rho)
     return rho
         
 if __name__ == '__main__':
-    input_length = 1000
-    alpha = 0.4
-    epsilon = 0.001
+    input_length = 1024
+    alpha = 0.5
+    epsilon = 0.1
 
     seed = open('./seed.txt', 'r').read()
     source = open('./source.txt', 'r').read()
