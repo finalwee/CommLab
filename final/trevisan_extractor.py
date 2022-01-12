@@ -51,15 +51,14 @@ def oneBitExtractor(seed, source, error):
     r = GF_2l(0)
     
     for i in range(1, s+1):
-        print(f'{alpha**(i-1):0{l}b}')
         alpha = c[i-1]*alpha**(i-1)
         r = r + alpha
 
     r = f'{r:0{l}b}'
     b = 0
-    # print(r)
+    
     for i in range(l):
-        b = b ^ (bool(seed[i+l]) & bool(int(r[i])))
+        b = b ^ (bool(int(seed[i+l])) & bool(int(r[i])))
     
     return b
 
@@ -73,7 +72,7 @@ def trsExtractor(seed, source, n, alpha, epsilon):
     t_req = int(2*np.ceil(np.log2(n)+2*np.log2(2/epsilon)))
     t = int(2**(np.ceil(np.log2(t_req))))
     d = t**2
-
+    print(d)
     seed = seed[:d]
     source = source[:n]
     
@@ -93,9 +92,9 @@ def trsExtractor(seed, source, n, alpha, epsilon):
     return rho
         
 if __name__ == '__main__':
-    input_length = 1024
-    alpha = 0.5
-    epsilon = 0.1
+    input_length = 1000
+    alpha = 0.4
+    epsilon = 0.001
 
     seed = open('./seed.txt', 'r').read()
     source = open('./source.txt', 'r').read()
