@@ -1,5 +1,6 @@
 import numpy as np
 from galois import GF
+import random
 
 def weakDesign(i, m, t, t_req):
     GF_t = GF(t)
@@ -63,23 +64,25 @@ def oneBitExtractor(seed, source, error):
     return b
 
 
-def trsExtractor(seed, source, n, alpha, epsilon):
+def trsExtractor(seed, source, output_length, alpha, epsilon):
     r = 2*np.e
 
-    k = alpha*n
-    m = int(np.floor((k-4*np.log2(1/epsilon)-6)/r))
+    # k = alpha*n
+    # m = int(np.floor((k-4*np.log2(1/epsilon)-6)/r))
+    k = r*output_length+4*np.log2(1/epsilon)+6
+    n = int(np.ceil(k/alpha))
 
     t_req = int(2*np.ceil(np.log2(n)+2*np.log2(2/epsilon)))
     t = int(2**(np.ceil(np.log2(t_req))))
     d = t**2
-    print(d)
+
     seed = seed[:d]
     source = source[:n]
     
-    rho = np.zeros(m)
+    rho = np.zeros(output_length)
 
-    for i in range(m): # m
-        S = weakDesign(i, m, t, t_req)
+    for i in range(output_length):
+        S = weakDesign(i, output_length, t, t_req)
         b = np.zeros(t_req)
 
         for j in range(t_req):
@@ -87,18 +90,26 @@ def trsExtractor(seed, source, n, alpha, epsilon):
         b = ''.join(b.astype(np.int64).astype(str))
 
         rho[i] = oneBitExtractor(b, source, epsilon)
-    print(len(rho))
-    print(rho)
+
     return rho
-        
+
+def generateRandomSource(bit_length):
+    random_int = random.randint(0, 2**bit_length)
+    return(f'{random_int:0{bit_length}b}')
+
 if __name__ == '__main__':
-    input_length = 1000
+    # input_length = 550
+    output_length = 16
     alpha = 0.4
     epsilon = 0.001
 
     seed = open('./seed.txt', 'r').read()
-    source = open('./source.txt', 'r').read()
+    # source = open('./source.txt', 'r').read()
+    # trsExtractor(seed, source, output_length, alpha, epsilon)
 
-    trsExtractor(seed, source, input_length, alpha, epsilon)
-    # weakDesign(727,727,128,72)
-    # trsExtractor()
+    f = open('./result.txt', 'a')
+    # f.write(generateRandomSource(333)+'\n')
+    for i in range(2**16):
+        source = generateRandomSource(333)
+        result = trsExtractor(seed, source, output_length, alpha, epsilon)
+        f.write(''.join([str(int(i)) for i in result]) + '\n')
